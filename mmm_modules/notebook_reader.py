@@ -23,7 +23,6 @@ pygtk.require('2.0')
 import gtk, gobject, pango
 
 import os
-from abiword import Canvas
 
 from gettext import gettext as _
 import locale
@@ -56,7 +55,7 @@ class ReaderProvider (object):
             code, encoding = locale.getdefaultlocale()
         if code is None:
             code = 'en'
-        files = map(lambda x: os.path.join(path, '%s.abw' % x),
+        files = map(lambda x: os.path.join(path, '%s.txt' % x),
                     ('_'+code.lower(), '_'+code.split('_')[0].lower(), 'default'))
         files = filter(lambda x: os.path.exists(x), files)
         return os.path.join(os.getcwd(), files[0])
@@ -101,14 +100,11 @@ class NotebookReaderWidget (gtk.Notebook):
         self.provider = ReaderProvider(path, lang_details)
         self.set_scrollable(True)
         for name, path in self.provider.get_lessons():
-            canvas = Canvas()
-            canvas.connect_after('map-event', self._map_event_cb, path)
-            canvas.show()
-            canvas._mapped = False
-            try:
-                canvas.load_file('file://' + path, '')
-            except:
-                canvas.load_file(path)
+            canvas = gtk.TextView()
+            canvas.set_wrap_mode(gtk.WRAP_WORD)
+            with open(path,'r') as f:
+                text = f.read()
+                canvas.get_buffer().set_text(text)
             self.append_page(canvas, gtk.Label(name))
 
     def _map_event_cb(self, o, e, path):
